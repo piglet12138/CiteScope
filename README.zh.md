@@ -22,11 +22,25 @@ CiteScope 是一个自部署的 **GEO (Generative Engine Optimization,生成式�
 
 ## 截图
 
-> _(首次部署后替换真实截图)_
+**跨 Run 横向对比** — 差异化故事:矩阵 + 雷达图,看 `After FAQ schema markup` 这次干预把 ChatGPT/Perplexity/Gemini 三家的提及率从 30.4% 拉到 56.5%。
 
-| 引用来源 Tab | Top Domains 报表 | 竞品资产清单 |
-|---|---|---|
-| `监测中心 > 引用来源` | `made-in-china.com × 39 (跨 3 平台)` | `Biorun → biorunsocks.com × 12` |
+![Run 对比 — 矩阵 + 雷达](./docs/_assets/screenshots/run-compare.png)
+
+<details>
+<summary><b>更多截图</b> — 总览 · 客户 · 监测 · 配置 · 教程 · 运维</summary>
+
+| 页面 | 截图 |
+|---|---|
+| 总览 (`/clients`) | ![](./docs/_assets/screenshots/overview.png) |
+| 监测对象详情 + 探针题库 | ![](./docs/_assets/screenshots/client-detail.png) |
+| 监测中心 — 概览 Tab (KPI + 趋势) | ![](./docs/_assets/screenshots/monitor-overview.png) |
+| 系统配置 — AI 搜索 API key 管理 | ![](./docs/_assets/screenshots/settings.png) |
+| `/guides` 教程总览 | ![](./docs/_assets/screenshots/guides-hub.png) |
+| 单个 guide 阅读页(引用来源使用手册) | ![](./docs/_assets/screenshots/guide-page.png) |
+| 任务队列 | ![](./docs/_assets/screenshots/task-queue.png) |
+| LLM 用量 / 成本 | ![](./docs/_assets/screenshots/llm-usage.png) |
+
+</details>
 
 ## 核心功能
 

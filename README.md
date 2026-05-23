@@ -24,11 +24,25 @@ It's the OSS alternative to commercial tools like Topify, Profound, Peec.ai — 
 
 ## Screenshots
 
-> _(replace with real screenshots after first deploy)_
+**Cross-Run comparison** — the differentiated story: matrix + radar showing how `After FAQ schema markup` lifted mention rate from 30.4% → 56.5% across ChatGPT / Perplexity / Gemini.
 
-| Citation Sources tab | Top domains report | Competitor assets |
-|---|---|---|
-| `monitoring center > 引用来源` | `made-in-china.com × 39 (3 platforms)` | `Biorun → biorunsocks.com × 12` |
+![Run compare — matrix + radar](./docs/_assets/screenshots/run-compare.png)
+
+<details>
+<summary><b>More screenshots</b> — overview · client · monitor · settings · guides · ops</summary>
+
+| Page | Screenshot |
+|---|---|
+| Overview (`/clients`) | ![](./docs/_assets/screenshots/overview.png) |
+| Client detail + probe question library | ![](./docs/_assets/screenshots/client-detail.png) |
+| Monitor center — Overview tab (KPI + trend) | ![](./docs/_assets/screenshots/monitor-overview.png) |
+| Settings — AI search API key management | ![](./docs/_assets/screenshots/settings.png) |
+| Tutorial hub at `/guides` | ![](./docs/_assets/screenshots/guides-hub.png) |
+| Single guide page (Citation Sources manual) | ![](./docs/_assets/screenshots/guide-page.png) |
+| Task queue | ![](./docs/_assets/screenshots/task-queue.png) |
+| LLM usage / cost | ![](./docs/_assets/screenshots/llm-usage.png) |
+
+</details>
 
 ## Features
 
