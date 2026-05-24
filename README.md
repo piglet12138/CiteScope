@@ -4,7 +4,7 @@
 > See where AI engines cite your brand — and where they cite your competitors.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![CI](https://github.com/<your-org>/CiteScope/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org>/CiteScope/actions/workflows/ci.yml)
+[![CI](https://github.com/piglet12138/CiteScope/actions/workflows/ci.yml/badge.svg)](https://github.com/piglet12138/CiteScope/actions/workflows/ci.yml)
 ![Made with FastAPI](https://img.shields.io/badge/backend-FastAPI-009688.svg)
 ![Frontend](https://img.shields.io/badge/frontend-React_18_+_Antd_5-1677ff.svg)
 
@@ -24,25 +24,51 @@ It's the OSS alternative to commercial tools like Topify, Profound, Peec.ai — 
 
 ## Screenshots
 
-**Cross-Run comparison** — the differentiated story: matrix + radar showing how `After FAQ schema markup` lifted mention rate from 30.4% → 56.5% across ChatGPT / Perplexity / Gemini.
+### The differentiated story: Run-vs-Run experiment compare
+
+Every monitoring round is a **versioned Run**. The compare view shows a matrix + radar of mention rate across runs, so you can validate whether a GEO intervention (`llms.txt`, FAQ schema, etc.) actually moved the needle. Below: `After FAQ schema markup` lifted mention rate from **30.4% → 56.5%** across ChatGPT / Perplexity / Gemini.
 
 ![Run compare — matrix + radar](./docs/_assets/screenshots/run-compare.png)
 
-<details>
-<summary><b>More screenshots</b> — overview · client · monitor · settings · guides · ops</summary>
+### Cross-client overview
 
-| Page | Screenshot |
+The landing dashboard at `/clients` lists every monitored brand with its 7-day mention rate and trend, so an agency managing multiple brands can see at a glance which campaigns are working.
+
+![Overview page](./docs/_assets/screenshots/overview.png)
+
+### Client detail + probe question library
+
+Each client has its own probe question library, importable via CSV. Questions are tagged by `category` (category-recommendation / competitor-lookup / use-case) and priority, which downstream reports use to slice the citation data.
+
+![Client detail with question library](./docs/_assets/screenshots/client-detail.png)
+
+### Monitor center — overview tab
+
+KPI strip + trend chart + per-platform breakdown for the selected period. Mention rate, first-position rate, link-citation rate, sentiment accuracy — the headline numbers you'd want on a monthly status page.
+
+![Monitor center overview](./docs/_assets/screenshots/monitor-overview.png)
+
+### Settings — API key management
+
+Schema-driven settings UI. Every adapter (ChatGPT / Perplexity / Gemini / Doubao / Kimi / DeepSeek) is a card with a `Test` button. Changes write to `runtime_config.json` and reload instantly — no restart.
+
+![Settings page](./docs/_assets/screenshots/settings.png)
+
+### In-app tutorial center
+
+Docs ship *inside* the app — no separate wiki. 8 module guides at `/guides`, grouped by getting started / config / workflow / analysis / ops.
+
+| Tutorial hub | Single guide |
 |---|---|
-| Overview (`/clients`) | ![](./docs/_assets/screenshots/overview.png) |
-| Client detail + probe question library | ![](./docs/_assets/screenshots/client-detail.png) |
-| Monitor center — Overview tab (KPI + trend) | ![](./docs/_assets/screenshots/monitor-overview.png) |
-| Settings — AI search API key management | ![](./docs/_assets/screenshots/settings.png) |
-| Tutorial hub at `/guides` | ![](./docs/_assets/screenshots/guides-hub.png) |
-| Single guide page (Citation Sources manual) | ![](./docs/_assets/screenshots/guide-page.png) |
-| Task queue | ![](./docs/_assets/screenshots/task-queue.png) |
-| LLM usage / cost | ![](./docs/_assets/screenshots/llm-usage.png) |
+| ![Guides hub](./docs/_assets/screenshots/guides-hub.png) | ![Single guide page](./docs/_assets/screenshots/guide-page.png) |
 
-</details>
+### Ops surface
+
+Async task queue + per-call LLM cost rollup (token, latency, $$ per platform). Both come for free with the metering instrumented into every adapter call.
+
+| Task queue | LLM usage / cost |
+|---|---|
+| ![Task queue](./docs/_assets/screenshots/task-queue.png) | ![LLM usage](./docs/_assets/screenshots/llm-usage.png) |
 
 ## Features
 
@@ -60,7 +86,7 @@ It's the OSS alternative to commercial tools like Topify, Profound, Peec.ai — 
 ### Docker Compose (1 minute)
 
 ```bash
-git clone https://github.com/<your-org>/CiteScope.git
+git clone https://github.com/piglet12138/CiteScope.git
 cd CiteScope
 cp backend/.env.example backend/.env
 # Open backend/.env and fill at least:

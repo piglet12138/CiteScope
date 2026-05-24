@@ -35,7 +35,7 @@ cd frontend && npm run dev
 
 ## What we'd love help with
 
-Looking at the [issues](https://github.com/<your-org>/CiteScope/issues), but in particular:
+Looking at the [issues](https://github.com/piglet12138/CiteScope/issues), but in particular:
 
 - **More AI adapters**: Bing Copilot, Claude.ai, You.com, Brave Search… anything with a citation-returning API. Adapter template: `services/ai_monitors/chatgpt.py` is the cleanest reference.
 - **i18n**: UI is currently zh-CN heavy with English mixed in. Patches for proper i18next or react-intl welcome.

@@ -4,7 +4,7 @@
 > 看清 AI 引擎在引用谁 —— 你的品牌和竞品的真实可见度。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![CI](https://github.com/<your-org>/CiteScope/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org>/CiteScope/actions/workflows/ci.yml)
+[![CI](https://github.com/piglet12138/CiteScope/actions/workflows/ci.yml/badge.svg)](https://github.com/piglet12138/CiteScope/actions/workflows/ci.yml)
 
 [English →](./README.md)
 
@@ -22,25 +22,51 @@ CiteScope 是一个自部署的 **GEO (Generative Engine Optimization,生成式�
 
 ## 截图
 
-**跨 Run 横向对比** — 差异化故事:矩阵 + 雷达图,看 `After FAQ schema markup` 这次干预把 ChatGPT/Perplexity/Gemini 三家的提及率从 30.4% 拉到 56.5%。
+### 差异化故事:Run-vs-Run 实验对比
+
+每轮监测都是一个**版本化的 Run**。对比视图用矩阵 + 雷达图横向显示提及率,可以验证某次 GEO 干预动作(`llms.txt`、FAQ schema 等)有没有真的把曲线推上去。下图:`After FAQ schema markup` 把 ChatGPT / Perplexity / Gemini 三家整体提及率从 **30.4% 拉到 56.5%**。
 
 ![Run 对比 — 矩阵 + 雷达](./docs/_assets/screenshots/run-compare.png)
 
-<details>
-<summary><b>更多截图</b> — 总览 · 客户 · 监测 · 配置 · 教程 · 运维</summary>
+### 跨客户总览
 
-| 页面 | 截图 |
+`/clients` 着陆页列出所有监测品牌的 7 天提及率 + 趋势 —— 给同时管多个品牌的 agency 一眼看出哪个营销策略奏效。
+
+![总览页](./docs/_assets/screenshots/overview.png)
+
+### 监测对象详情 + 探针题库
+
+每个客户有独立的探针题库,可 CSV 批量导入。问题按 `category`(品类推荐 / 竞品对比 / 用途场景)+ priority 标签,下游报表按这些维度切数据。
+
+![监测对象详情](./docs/_assets/screenshots/client-detail.png)
+
+### 监测中心 — 概览 Tab
+
+顶部 KPI 条 + 趋势图 + 平台明细。提及率、首位提及率、带链接引用率、情感准确性 —— 月度向客户汇报的头版数据全在这。
+
+![监测中心概览](./docs/_assets/screenshots/monitor-overview.png)
+
+### 系统配置 — API key 管理
+
+Schema-driven 配置 UI。每个适配器(ChatGPT / Perplexity / Gemini / 豆包 / Kimi / DeepSeek)独立卡片 + 「测试」按钮。改动写 `runtime_config.json`,**立即生效,无需重启**。
+
+![系统配置](./docs/_assets/screenshots/settings.png)
+
+### 站内嵌入式教程中心
+
+文档**嵌进 app 里**,不要赶用户去 wiki。`/guides` 路由,8 个模块独立 guide,按 入门 / 配置 / 工作流 / 数据分析 / 运维 分组。
+
+| 教程总览 | 单个 guide 阅读页 |
 |---|---|
-| 总览 (`/clients`) | ![](./docs/_assets/screenshots/overview.png) |
-| 监测对象详情 + 探针题库 | ![](./docs/_assets/screenshots/client-detail.png) |
-| 监测中心 — 概览 Tab (KPI + 趋势) | ![](./docs/_assets/screenshots/monitor-overview.png) |
-| 系统配置 — AI 搜索 API key 管理 | ![](./docs/_assets/screenshots/settings.png) |
-| `/guides` 教程总览 | ![](./docs/_assets/screenshots/guides-hub.png) |
-| 单个 guide 阅读页(引用来源使用手册) | ![](./docs/_assets/screenshots/guide-page.png) |
-| 任务队列 | ![](./docs/_assets/screenshots/task-queue.png) |
-| LLM 用量 / 成本 | ![](./docs/_assets/screenshots/llm-usage.png) |
+| ![教程总览](./docs/_assets/screenshots/guides-hub.png) | ![单 guide 页](./docs/_assets/screenshots/guide-page.png) |
 
-</details>
+### 运维面
+
+异步任务队列 + LLM 调用成本(token / 延迟 / $$ 按 provider 聚合)。每次 adapter 调用都自动记账,这两页是免费送的。
+
+| 任务队列 | LLM 用量 / 成本 |
+|---|---|
+| ![任务队列](./docs/_assets/screenshots/task-queue.png) | ![LLM 用量](./docs/_assets/screenshots/llm-usage.png) |
 
 ## 核心功能
 
@@ -58,7 +84,7 @@ CiteScope 是一个自部署的 **GEO (Generative Engine Optimization,生成式�
 ### Docker Compose (1 分钟)
 
 ```bash
-git clone https://github.com/<your-org>/CiteScope.git
+git clone https://github.com/piglet12138/CiteScope.git
 cd CiteScope
 cp backend/.env.example backend/.env
 # 打开 backend/.env,至少填:

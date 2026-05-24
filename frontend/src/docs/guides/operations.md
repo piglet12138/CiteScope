@@ -14,7 +14,7 @@ Footprint: comfortably runs on a 1 vCPU / 1 GB VM. Single binary deployment.
 ## Quick start with Docker Compose
 
 ```bash
-git clone https://github.com/<your-org>/CiteScope.git
+git clone https://github.com/piglet12138/CiteScope.git
 cd CiteScope
 cp backend/.env.example backend/.env
 # Fill in at least OPENAI_OFFICIAL_API_KEY + PERPLEXITY_API_KEY + GOOGLE_AI_API_KEY

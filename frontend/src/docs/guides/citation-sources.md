@@ -139,4 +139,4 @@ A：Top Domains / Competitor Assets 是实时聚合 SQL。当前 SQLite 单库�
 - 回填脚本：`/opt/citescope/backend/scripts/backfill_citations.py`
 - 前端组件：`frontend/src/components/CitationSourcesPanel.tsx`
 - 前端 API SDK：`frontend/src/api/citationReports.ts`
-- GitHub：<https://github.com/<your-org>/CiteScope> 分支 `main`
+- GitHub：<https://github.com/piglet12138/CiteScope> 分支 `main`

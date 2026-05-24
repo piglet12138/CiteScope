@@ -1,0 +1,589 @@
+---
+import Analytics from "../../../components/Analytics.astro";
+const title = '开源 CiteScope：跟 Topify $99/月做同样的事，多做了一刀';
+const subtitle = 'ANV 真实案例驱动 + span attribution 差异化 + 一个 solo dev 在「商业化 vs 开源」之间的 Open Core 取舍';
+const description = '为客户 ANV 做 GEO 监测时把市场上的 Topify / Profound / Peec.ai 看了一圈，发现所有商业工具都没做 citation 跟品牌提及的句子级归因（span attribution）。自己造了一个 MIT 开源平替 CiteScope：6 家 AI 引擎统一 schema、Gemini grounding redirect 自动解析、Run 对比矩阵 + 雷达图。本文是发布稿 —— 讲为什么造、跟商业工具的逐项对比、ANV 真实跑出来的 Top Domains 数据，以及作为 solo dev 为什么选开源不直接卖 SaaS。';
+const url = 'https://sg.yaoyuheng2001.me/posts/open-source-citescope/';
+const datePublished = '2026-05-24';
+const dateModified = '2026-05-24';
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["BlogPosting", "TechArticle"],
+  "headline": title,
+  "alternativeHeadline": subtitle,
+  "description": description,
+  "url": url,
+  "datePublished": datePublished,
+  "dateCreated": datePublished,
+  "dateModified": dateModified,
+  "inLanguage": "zh-CN",
+  "author": {
+    "@type": "Person",
+    "name": "Yao Yuheng",
+    "alternateName": "姚钰珩",
+    "url": "https://sg.yaoyuheng2001.me/",
+    "sameAs": [
+      "https://github.com/piglet12138",
+      "https://juejin.cn/user/3159377279190218"
+    ]
+  },
+  "creator": {"@type": "Person", "name": "Yao Yuheng", "alternateName": "姚钰珩"},
+  "publisher": {"@type": "Person", "name": "Yao Yuheng", "url": "https://sg.yaoyuheng2001.me/"},
+  "copyrightHolder": {"@type": "Person", "name": "Yao Yuheng"},
+  "copyrightYear": 2026,
+  "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+  "isAccessibleForFree": true,
+  "isPartOf": {"@type": "Blog", "name": "sg.yaoyuheng2001.me", "url": "https://sg.yaoyuheng2001.me/"},
+  "mainEntityOfPage": url,
+  "image": "https://sg.yaoyuheng2001.me/images/open-source-citescope/hero.png",
+  "keywords": "GEO, AEO, Generative Engine Optimization, Answer Engine Optimization, AI 搜索优化, AI Citation 分析, ChatGPT 监测, Perplexity 监测, Gemini 监测, 火山方舟, 豆包 API, CiteScope, Topify 平替, Profound 平替, Peec.ai 平替, 开源 GEO 工具, span attribution, 品牌提及归因, citation source analysis, 竞品 GEO 分析, FastAPI, React, B2B 出口品牌可见度, Open Core, solo developer",
+  "wordCount": 5800,
+  "articleSection": "工程实践 / 开源产品",
+  "about": [
+    {"@type": "SoftwareApplication", "name": "CiteScope", "url": "https://github.com/piglet12138/CiteScope", "applicationCategory": "DeveloperApplication"}
+  ]
+};
+
+const faqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "CiteScope 是什么？跟 Topify / Profound / Peec.ai 这些商业 GEO 监测工具有什么区别？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "CiteScope 是一个 MIT 开源、自部署的 GEO (Generative Engine Optimization) 监测平台。把你的探针问题打到 ChatGPT / Perplexity / Gemini / 豆包 / Kimi / DeepSeek 六家 AI 搜索引擎，记录回答和 citation。商业工具（Topify $99-199/月、Profound $499+/月、Peec.ai €80-120/月）做的事一样，差异有三点：(1) CiteScope 完全开源 MIT，你可以审 100 行的 services/ai_monitors/chatgpt.py 知道 citation 到底是怎么解析的；(2) 实现了 span attribution —— 告诉你某条 citation 是否真的支撑了提到你品牌的那句话，所有商业工具都没做；(3) 自部署，数据在你自己 SQLite 文件里，不上传任何 SaaS。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "什么是 span attribution？为什么所有商业工具都没做？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Span attribution 是「这条 citation 实际支撑了 AI 回答里哪段话」的归因。Topify 能告诉你「Reddit 被引用 78%」，但 CiteScope 多一句：「这 78% 里有 23% 精确地支撑了提到你品牌的句子，55% 支撑无关竞品提及或行业通用论述」。算法 90 行 Python（services/citation_analysis/span_attribution.py）—— 按句子切分 AI 回答（处理中英文混排标点），找品牌词位置和 citation 标记位置的区间交集。商业工具不做的两个原因：(1) 计算成本不低且营销卖点不直观，(2) 一旦做了会暴露大多数 citation 追踪其实多浅。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "我要跑 CiteScope 需要什么？预算多少？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "硬件：1 vCPU / 1 GB RAM 的 VM 够用（SQLite 单库 + 单进程 uvicorn）。一行 docker compose up -d 起服务。API key 至少 3 把：OpenAI Official（platform.openai.com/api-keys，跑 ChatGPT web search）、Perplexity Sonar 或 OpenRouter、Google AI Studio（aistudio.google.com/apikey）。可选：火山方舟 Ark 接豆包、Moonshot 接 Kimi。预算估算：100 prompt × 3 平台 × 每周 1 次的典型频率，API 月成本 5-15 美元。Topify 卖你同样的数据 99 美元一个月。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "豆包和 DeepSeek 怎么接入？它们都有官方 search API 吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "豆包走火山方舟 Ark Responses API + 内置 web_search 工具（2026 Q1 上线），单轮调用，返回结构化 url_citation annotations 含 url / title / start_index / end_index，跟 OpenAI Responses API 几乎对齐。CiteScope 的 doubao.py adapter 自动把 [citation:N] 标记按 end_index 倒序插回正文，span attribution 完全可用。DeepSeek 官方 API 截至 2026-05 还没有 web search 工具，CiteScope 用 chat.deepseek.com 的 refresh_token + WASM POW 逆向作为 best-effort 兜底，等 DeepSeek 推官方 search endpoint 后会切回 API。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "已经在生产用了吗？数据安全怎么保证？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "已经在跑 —— 一个 B2B 出口袜厂客户（化名 ANV）的英文 AI 搜索 GEO 监测用了三周。数据完全在客户自己的 1GB VPS 上，所有探针 prompt / AI 响应 / citation 都落在本地 SQLite，不上传任何第三方 SaaS。这是开源 + 自部署相比 Topify / Profound 的核心安全优势：客户的探针 prompt 本身就是商业策略（看哪些竞品），不该出现在第三方厂商数据库里。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "为什么选开源不直接做 SaaS 卖钱？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "三个理由：(1) 我是 solo dev，同时在维护其他几个项目，没有 6-12 个月的全职 runway 跟 VC 加持的 Topify / Profound 正面对抗 GTM；(2) Open Core 路径已经被 PostHog / Plausible / Cal.com / Supabase / n8n 验证 —— OSS 6-12 个月积累 stars 和反馈后再叠 hosted SaaS，capital-efficient，且 GitHub repo 本身就是最便宜的 lead gen；(3) ANV 真实案例只有开源才能引用（SaaS 不能秀客户内部数据）。所以现在的剧本是：先开源 6 个月看牵引力，如果有 500 stars 以上和重复出现 hosted 需求，就启动 citescope.cloud 卖 19-49 美元/月（undercut Topify）。"
+      }
+    }
+  ]
+};
+---
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content={description} />
+  <meta name="keywords" content="GEO, AEO, Generative Engine Optimization, Answer Engine Optimization, AI 搜索优化, AI Citation 分析, ChatGPT 监测, Perplexity 监测, Gemini 监测, 火山方舟, 豆包 API, CiteScope, Topify 平替, Profound 平替, Peec.ai 平替, 开源 GEO 工具, span attribution, 品牌提及归因, citation source analysis, 竞品 GEO 分析, FastAPI, React, B2B 出口品牌可见度, Open Core, solo developer, indie hacker" />
+  <meta name="author" content="Yao Yuheng" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <link rel="canonical" href={url} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={url} />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:image" content="https://sg.yaoyuheng2001.me/images/open-source-citescope/hero.png" />
+  <meta property="article:published_time" content={datePublished} />
+  <meta property="article:modified_time" content={dateModified} />
+  <meta property="article:author" content="Yao Yuheng" />
+  <meta property="article:section" content="工程实践 / 开源产品" />
+  <meta property="article:tag" content="GEO" />
+  <meta property="article:tag" content="AEO" />
+  <meta property="article:tag" content="Citation 分析" />
+  <meta property="article:tag" content="CiteScope" />
+  <meta property="article:tag" content="开源" />
+  <meta property="article:tag" content="Topify 平替" />
+  <meta property="article:tag" content="span attribution" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content="https://sg.yaoyuheng2001.me/images/open-source-citescope/hero.png" />
+  <title>{title} — Yao Yuheng</title>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #ece6d8;
+      --paper: #ddd6c5;
+      --ink: #1f2d3d;
+      --ink-light: #4a5a6e;
+      --ink-faint: #8a96a4;
+      --accent: #b35900;
+      --accent-soft: rgba(179, 89, 0, 0.10);
+      --line: #c8cdd4;
+      --warm-white: #f7f5ee;
+      --display: 'Inter Tight', 'Inter', 'PingFang SC', 'Noto Sans SC', sans-serif;
+      --body: 'Inter', 'PingFang SC', 'Noto Sans SC', sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      --rust: var(--accent);
+      --rust-soft: var(--accent-soft);
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--body);
+      color: var(--ink);
+      background-color: var(--cream);
+      background-image: url('/images/open-source-citescope/paper-bg.jpg');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      line-height: 1.9;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999;
+    }
+
+    .back {
+      position: fixed; top: 22px; left: 22px; z-index: 50;
+      font-family: var(--body); font-size: 13px;
+      color: var(--ink-faint); text-decoration: none;
+      background: rgba(247, 245, 238, 0.85);
+      border: 1px solid var(--line);
+      padding: 6px 14px; border-radius: 999px;
+      backdrop-filter: blur(8px);
+      transition: all 0.25s;
+    }
+    .back:hover { color: var(--accent); border-color: var(--accent); }
+
+    article { max-width: 760px; margin: 0 auto; padding: 96px 28px 96px; position: relative; }
+    .eyebrow { font-family: var(--body); text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 16px; }
+    h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 5.6vw, 52px); line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 14px; color: var(--ink); }
+    .subtitle { font-family: var(--display); font-weight: 400; font-size: clamp(16px, 2.2vw, 20px); color: var(--ink-light); line-height: 1.45; margin-bottom: 28px; }
+    .meta { color: var(--ink-faint); font-size: 13px; margin-bottom: 36px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+    .meta .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: 0.05em; }
+    .lead { font-family: var(--body); font-weight: 400; font-size: 17.5px; color: var(--ink-light); line-height: 1.7; margin-bottom: 32px; }
+    .cta { display: flex; gap: 12px; margin: 24px 0 40px; flex-wrap: wrap; }
+    .cta a { display: inline-flex; align-items: center; padding: 10px 18px; border-radius: 999px; font-family: var(--body); font-weight: 500; font-size: 13px; text-decoration: none; transition: all 0.2s; }
+    .cta-primary { background: var(--ink); color: var(--warm-white); }
+    .cta-primary:hover { background: var(--accent); }
+    .cta-secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-img { width: 100%; border-radius: 8px; margin: 12px 0 40px; box-shadow: 0 10px 30px rgba(31, 45, 61, 0.10); }
+    h2 { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.25; letter-spacing: -0.01em; margin: 48px 0 18px; padding-top: 28px; border-top: 1px solid var(--line); color: var(--ink); }
+    h3 { font-family: var(--display); font-weight: 600; font-size: 18px; line-height: 1.3; margin: 28px 0 10px; color: var(--ink); }
+    p { margin-bottom: 18px; color: var(--ink-light); }
+    p strong, li strong { color: var(--ink); font-weight: 600; }
+    a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color 0.2s; }
+    a:hover { color: var(--ink); }
+    ul, ol { margin: 12px 0 20px 26px; color: var(--ink-light); }
+    li { margin-bottom: 8px; line-height: 1.85; }
+    blockquote { border-left: 3px solid var(--accent); padding: 4px 0 4px 18px; margin: 20px 0; color: var(--ink-light); font-style: italic; font-family: var(--body); font-size: 16px; }
+    pre { background: #1a2638; color: #e6ecf2; padding: 18px 20px; border-radius: 8px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.65; margin: 18px 0; }
+    p code, li code { font-family: var(--mono); background: var(--paper); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--ink); }
+    figure { margin: 28px 0; }
+    figure img { width: 100%; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(31, 45, 61, 0.08); }
+    figcaption { font-family: var(--body); font-style: italic; font-size: 13.5px; color: var(--ink-faint); margin-top: 10px; text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; font-family: var(--body); }
+    table th, table td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-light); }
+    table th { background: var(--paper); font-weight: 600; color: var(--ink); font-size: 13px; letter-spacing: 0.02em; }
+    .product-card { background: var(--warm-white); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 22px 24px; margin: 24px 0; }
+    .product-card .pc-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+    .product-card .pc-title { font-family: var(--display); font-weight: 700; font-size: 22px; color: var(--ink); margin-bottom: 8px; }
+    .product-card .pc-tagline { font-size: 14.5px; color: var(--ink-light); margin-bottom: 14px; line-height: 1.6; }
+    .product-card .pc-features { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-light); }
+    .product-card .pc-features span::before { content: '· '; color: var(--accent); font-weight: 700; }
+    .product-card .pc-links { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .product-card .pc-links a { font-size: 13px; padding: 6px 14px; border-radius: 999px; background: var(--accent); color: var(--warm-white); text-decoration: none; }
+    .product-card .pc-links a.outline { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .originality-card { background: var(--warm-white); border: 1px solid var(--line); border-radius: 10px; padding: 26px 28px; margin: 56px 0 28px; }
+    .originality-card .oc-badge { display: inline-block; background: var(--accent); color: var(--warm-white); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; margin-bottom: 12px; }
+    .originality-card .oc-headline { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 14px; }
+    .originality-card .oc-meta { display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; font-size: 13.5px; color: var(--ink-light); margin: 0 0 14px; }
+    .originality-card .oc-meta dt { color: var(--ink-faint); }
+    .originality-card .oc-meta dd { color: var(--ink-light); }
+    .originality-card .oc-meta dd code { font-size: 12px; }
+    .originality-card .oc-license { font-size: 12.5px; color: var(--ink-faint); line-height: 1.7; border-top: 1px dashed var(--line); padding-top: 12px; }
+    .originality-card .oc-license a { color: var(--accent); }
+    .author-card { background: var(--paper); border-radius: 8px; padding: 22px 24px; margin: 18px 0 12px; }
+    .author-card .name { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 6px; }
+    .author-card .bio { font-size: 13.5px; color: var(--ink-light); line-height: 1.7; margin-bottom: 10px; }
+    .author-card .links { font-size: 13px; color: var(--ink-faint); }
+    .author-card .links a { color: var(--accent); text-decoration: none; margin-right: 6px; }
+    .author-card .links a:hover { text-decoration: underline; }
+    .footer-note { color: var(--ink-faint); font-size: 12px; text-align: center; margin-top: 36px; line-height: 1.8; }
+    @media (max-width: 720px) {
+      article { padding: 72px 18px 72px; }
+      .originality-card .oc-meta { grid-template-columns: 1fr; }
+      .originality-card .oc-meta dt { color: var(--ink); font-weight: 600; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back" href="/">← 回首页</a>
+
+  <article>
+    <div class="eyebrow">OPEN SOURCE · GEO · CITATION ANALYSIS</div>
+    <h1>{title}</h1>
+    <p class="subtitle">{subtitle}</p>
+
+    <div class="meta">
+      <span>2026 年 5 月 24 日</span>
+      <span>·</span>
+      <span>Yao Yuheng</span>
+      <span class="tag">GEO/AEO</span>
+      <span class="tag">开源产品</span>
+      <span class="tag">Citation 分析</span>
+    </div>
+
+    <p class="lead">
+      2026 年中，客户找供应商的方式已经悄悄变了。我做的一个 B2B 出口袜厂客户（化名 ANV），目前在 ChatGPT / Perplexity / Gemini 上的 AI 覆盖率是 <strong>0%</strong>。客户老板想知道两件事：怎么进 AI 短名单？竞品的 AI 弹药库在哪？市面上的 GEO 监测工具我看了一圈，<a href="https://topify.ai">Topify</a> 99-199 美元/月、<a href="https://www.tryprofound.com">Profound</a> 499+ 美元/月、<a href="https://peec.ai">Peec.ai</a> 80-120 欧/月，做的事都差不多 —— 但有一刀谁都没切。所以花两周自己造了一个开源平替 <a href="https://github.com/piglet12138/CiteScope"><strong>CiteScope</strong></a>，今天发布。
+    </p>
+
+    <div class="cta">
+      <a class="cta-primary" href="https://github.com/piglet12138/CiteScope" target="_blank">GitHub piglet12138/CiteScope →</a>
+      <a class="cta-secondary" href="https://github.com/piglet12138/CiteScope/blob/main/docs/COMPARISON.md" target="_blank">vs 商业工具对比表</a>
+      <a class="cta-secondary" href="https://github.com/piglet12138/CiteScope/blob/main/docs/ARCHITECTURE.md" target="_blank">架构 deep dive</a>
+    </div>
+
+    <img class="hero-img" src="/images/open-source-citescope/hero.png" alt="一张温暖 sepia 调的版画式插图：一台黄铜光学测绘仪（望远镜 + 棱镜 + 六分仪的混合体）立在老橡木桌上。仪器的目镜射出多束细光线，扩散到桌下铺开的世界贸易地图上，照亮散布在各大洲上的黄铜小图钉，每个图钉发出微弱的回声光线 —— 这是 citation 从 AI 搜索结果反向追溯到来源域名的视觉隐喻。桌上还有罗盘、折叠测距尺、皮面笔记本。左上方台灯柔光，右侧深影。中心居中、正式工程图风格、手工雕刻交叉影线。" />
+
+    <h2>AI 搜索流量正在分走 Google 的购买意图</h2>
+
+    <p>如果你在 2026 年还在做品牌增长，八成已经发现这个不太舒服的现象：<strong>有相当一部分购买意图的流量正在从 Google 流向 AI 对话窗口</strong>。</p>
+
+    <p>当客户问 ChatGPT 「2026 年中国最好的 B2B 袜厂有哪些」或问 Perplexity 「北美进口冷链物流找谁」，他们拿到的是一段 200 字的回答，点名 3-5 家供应商，带可点击的 citation 链接。他们不会再去翻十条蓝色链接。他们直接从 AI 的短名单里挑。</p>
+
+    <p>如果你的品牌不在这份短名单上，你就是隐形的 —— 哪怕 Google 上同样的关键词你排第一。</p>
+
+    <p>这就是 <strong>GEO</strong>（Generative Engine Optimization，生成式引擎优化），或者 <strong>AEO</strong>（Answer Engine Optimization，应答引擎优化），2026 年中开始更常用的叫法。一个意思：优化 AI 搜索的可见度，而不只是 Google。</p>
+
+    <p>这个赛道很热。Topify、Profound、Peec.ai、Otterly、AthenaHQ —— 全部在过去 18 个月里冒出来，统一收 80-500 美元/月。<strong>但它们卖的本质上是同一件事</strong>：把你的探针问题打到 AI 引擎上，记录回答和 citation，画几张图。</p>
+
+    <h2>客户的真实需求：0% AI 覆盖率怎么破</h2>
+
+    <p>我的 GEO 业务起源是给一个真实客户做诊断。客户化名 ANV，主营 B2B 出口袜业（OEM/ODM），目标市场欧美。背景：</p>
+
+    <ul>
+      <li>有自己的工厂（实体生产能力），有审计认证（LRQA / Intertek 体系内）</li>
+      <li>过去主要靠展会 + 阿里国际站获客</li>
+      <li>2026 年中老板意识到大客户买家越来越多从 ChatGPT / Perplexity / Gemini 起手做供应商初筛</li>
+      <li>初步盘点：客户品牌在英文 AI 搜索里 <strong>0% 覆盖率</strong>。竞品（Biorun 29%、CJ 34%、MeetSocks 24%）已经被 AI 推荐</li>
+    </ul>
+
+    <p>老板的诉求是三个问题：</p>
+
+    <ol>
+      <li><strong>我的品牌有没有被 AI 提到？</strong>跨引擎、跨时间窗的提及率</li>
+      <li><strong>AI 提及行业问题时引用了哪些站？</strong>这些就是我要去铺内容的「弹药库」</li>
+      <li><strong>竞品的 AI 资产到底是什么？</strong>AI 提到 Biorun 时引用了哪些 URL，反推竞品的 GEO 内容投放</li>
+    </ol>
+
+    <p>第一个问题简单 —— 跑探针、看 mention 率，每家商业 GEO 工具都做。第二个问题中等 —— 域名聚合的 Top Domains 报表，主流商业工具也都做了。<strong>第三个问题是关键</strong>：商业工具大多停留在「列出竞品被引用的 URL 总数」，但没法精确说「AI 提到这家竞品的那段话里，是哪条 URL 在背书」。这才是真正的反向归因。</p>
+
+    <h2>市场上的工具我看了一圈</h2>
+
+    <p>正式动手前我把英文圈主流 GEO 监测 SaaS 都注册过 trial 跑了一遍。粗略归纳：</p>
+
+    <table>
+      <tr><th>工具</th><th>定价</th><th>AI 引擎覆盖</th><th>差异化点</th><th>缺什么</th></tr>
+      <tr><td><strong>Topify</strong></td><td>99-199 美元/月</td><td>7+，唯一覆盖豆包/DeepSeek/Qwen</td><td>中文生态覆盖最全 + Source Analysis</td><td>Basic 档 100 prompt 上限对 agency 偏紧</td></tr>
+      <tr><td><strong>Profound</strong></td><td>499+ 美元/月（quote）</td><td>10+（无豆包）</td><td>企业 polish + 集成 HubSpot/Salesforce</td><td>贵；中文引擎覆盖弱</td></tr>
+      <tr><td><strong>Peec.ai</strong></td><td>80-120 欧/月 + 附加</td><td>5（DeepSeek 是 80 欧附加）</td><td>欧洲精瘦定价</td><td>引擎覆盖最窄</td></tr>
+      <tr><td><strong>Otterly</strong></td><td>~50 美元/月</td><td>5</td><td>小品牌 / freelancer 友好</td><td>数据深度浅</td></tr>
+      <tr><td><strong>AthenaHQ</strong></td><td>企业报价</td><td>5+</td><td>agency 多客户管理</td><td>透明度低 + 无中文</td></tr>
+    </table>
+
+    <p>共通点：<strong>都是 SaaS、都不公开数据处理细节、都没做 span attribution、都不让你自定义 AI 引擎 adapter</strong>。差异化大多是工作流打磨 + 集成丰富度 + AI 引擎覆盖数。底层数据本身不是壁垒 —— 同样的探针 prompt 打给同一个 OpenAI Responses API 拿回的就是同样的 citation。商业 SaaS 卖的是「省下你自部署的两天时间」这个差价。</p>
+
+    <blockquote>
+      整个赛道在卖一个 20 美元/月的服务，定价 200 美元/月。客观看，对没有工程能力的中小品牌方这个差价合理。但对有工程能力 + 想自定义 + 在乎数据自主的团队，存在巨大套利空间。
+    </blockquote>
+
+    <h2>我决定自己造的三个理由</h2>
+
+    <h3>1. 数据自主：探针 prompt 本身就是商业策略</h3>
+
+    <p>客户的探针 prompt 看似只是一些通用行业问题，但精心设计的 prompt 集合（哪个品类、哪些竞品名、哪些用途场景）实际上暴露了客户的市场策略。这些数据落在第三方 SaaS 数据库里 = 你的策略对厂商透明。</p>
+
+    <p>对 ANV 这种正在制定 GEO 突围方案的客户，把 prompt 集合上传给一家美国 SaaS 厂商（即便是声誉好的）也是要内部审批的合规事项。自部署 SQLite 完全消除这个摩擦。</p>
+
+    <h3>2. 差异化：我要做 span attribution</h3>
+
+    <p>这是真正的 differentiating feature。商业工具最多告诉你：</p>
+
+    <blockquote>「上周你这个品类的 AI 回答里 Reddit 被引用了 78%。」</blockquote>
+
+    <p>我要的是多一句：</p>
+
+    <blockquote>「Reddit 被引用 78%。其中 23% 精确地支撑了提到你品牌的句子 —— 对比 55% 支撑的是无关竞品提及或行业通用论述。」</blockquote>
+
+    <p>这两个数据驱动的动作完全不同。第一个版本你只能说「Reddit 是高频引用源」—— 没用，所有竞品都知道。第二个版本你能区分「Reddit 在我品类是泛引用」vs「Reddit 是我品牌的真实背书源」vs「Reddit 引用了我品类里所有人除了我」。最后一种情况意味着真实的内容缺口（gap analysis）。</p>
+
+    <h3>3. 国内 AI 引擎覆盖：豆包 / Kimi / DeepSeek</h3>
+
+    <p>如果客户只做欧美出口，国际 AI 引擎够用。但 ANV 也希望覆盖国内询盘场景（部分国内大客户问豆包要供应商推荐），同时下一阶段想扩展到给国内品牌做 GEO 服务。这意味着豆包 / Kimi / DeepSeek 必须能接入。</p>
+
+    <p>市场上唯一同时覆盖国际 + 中文引擎的 Topify 跟我聊过 trial，但他们的 Doubao 走 cookie 逆向，账户级 token 失效率高。我希望走官方 API —— <strong>2026 Q1 上线的火山方舟 Ark Responses API + web_search 内置工具</strong>就完美满足。</p>
+
+    <h2>CiteScope 是什么</h2>
+
+    <div class="product-card">
+      <div class="pc-eyebrow">PROJECT · MIT LICENSE</div>
+      <div class="pc-title">CiteScope</div>
+      <div class="pc-tagline">
+        自部署的 GEO 监测平台。看清 AI 搜索引擎在引用谁 ——
+        你的品牌和竞品的真实可见度。<strong>Topify / Profound / Peec.ai 的 MIT 开源平替</strong>，多了一个所有商业工具都没做的 span attribution。
+      </div>
+      <div class="pc-features">
+        <span>6 家 AI 引擎统一 schema（ChatGPT / Perplexity / Gemini / 豆包 / Kimi / DeepSeek）</span>
+        <span>Citation 域名聚合（Top Domains）+ 竞品反向归因（Competitor Assets）</span>
+        <span>Gemini grounding redirect 后台 worker 自动解析</span>
+        <span>Span attribution —— citation 跟品牌提及的句子级关联（独家）</span>
+        <span>Run 实验对比 —— 矩阵 + 雷达图横向看 GEO 干预效果</span>
+        <span>站内嵌入式教程中心 + 8 个模块独立 guide</span>
+        <span>单 SQLite + 1 vCPU / 1 GB 即可跑</span>
+      </div>
+      <div class="pc-links">
+        <a href="https://github.com/piglet12138/CiteScope" target="_blank">GitHub →</a>
+        <a class="outline" href="https://github.com/piglet12138/CiteScope/blob/main/docs/COMPARISON.md" target="_blank">vs 商业工具</a>
+        <a class="outline" href="https://github.com/piglet12138/CiteScope/blob/main/README.zh.md" target="_blank">中文 README</a>
+      </div>
+    </div>
+
+    <p>架构 30 秒版：</p>
+
+    <pre is:raw>
+React + Vite + Antd 5
+        │ HTTP/REST
+        ▼
+FastAPI + uvicorn + SQLAlchemy + APScheduler
+        │
+        ├──→ AI 适配器 ×6 (ChatGPT/Perplexity/Gemini/豆包/Kimi/DeepSeek)
+        ├──→ SQLite (WAL 模式)
+        └──→ 后台 citation resolver job (每 5min 一批 Gemini wrapper)
+</pre>
+
+    <p>单进程 + 单 DB 文件，起步不需要 Redis / Celery / Postgres。1 vCPU / 1 GB 内存够用。一行 <code>docker compose up -d</code> 起服务，<code>localhost:3000</code> 打开。</p>
+
+    <h2>核心差异化：span attribution 是什么</h2>
+
+    <p>这是 CiteScope 跟所有商业工具最大的区别，值得花一段讲。</p>
+
+    <p>AI 回答里通常有 <code>[citation:N]</code> 标记（或者 OpenAI 的 <code>url_citation</code> annotation，Gemini 的 <code>groundingMetadata</code>，Volcengine Ark 的 annotation）。每条 citation 都有 <code>start_index</code> 和 <code>end_index</code>，指向它在 AI 回答正文中支撑哪段话。</p>
+
+    <p>商业工具拿这些 citation 时只用了一半信息：URL + title。它们丢掉了 span 信息。所以最多告诉你「这个域名被引用了 N 次」。</p>
+
+    <p>CiteScope 多做了一步：把 <code>[citation:N]</code> 标记位置和品牌词位置都计算出来，按句子切分 AI 回答，<strong>判断 citation 是否落在跟品牌提及同一句话里</strong>。如果是，这条 citation 就是真实支撑你品牌的；如果不是，它只是泛引用。</p>
+
+    <p>算法是 90 行 Python（<code>backend/app/services/citation_analysis/span_attribution.py</code>）。核心逻辑：</p>
+
+    <pre is:raw>
+def compute_supports_brand_mention(
+    raw_answer: str,
+    brand_keywords: list[str],
+    cite_indices: list[int],
+) -> dict[int, bool]:
+    # 1) 找所有品牌关键词出现的 char 区间 (大小写不敏感)
+    brand_spans = find_keyword_spans(raw_answer, brand_keywords)
+
+    # 2) 找所有 [citation:N] marker 的位置, 按 N 分组
+    markers_by_n = find_citation_markers(raw_answer)
+
+    # 3) 按句子切分 (中英文混排标点),
+    #    每个句子查: 既包含某个 brand_span 又包含某个 marker → 该 N = True
+    supported = set()
+    for s, e, _ in iter_sentence_spans(raw_answer):
+        has_brand = any(span_overlaps(bs, be, s, e) for bs, be in brand_spans)
+        if not has_brand:
+            continue
+        for n, ms in markers_by_n.items():
+            if any(span_overlaps(ms_s, ms_e, s, e) for ms_s, ms_e in ms):
+                supported.add(n)
+
+    return {n: (n in supported) for n in cite_indices}
+</pre>
+
+    <p>难点不在算法，在三个细节：(1) 中英文混排的<strong>分句</strong>（中文句号后通常无空格，英文句号紧贴中文字符也要切）；(2) 各家 AI 引擎返回的 citation 标记<strong>归一化</strong>；(3) <strong>插标记</strong>到原始正文（OpenAI / Ark 返回的是 span index，需要按 end_index 倒序插 <code>[citation:N]</code> 让后续算法能跑）。</p>
+
+    <p>三个细节我各踩过一次坑。OpenAI 的 chat completions + search-preview 不返回 span（只有 annotations 数组），所以 ChatGPT adapter 暂时只能「全文级」归因；Gemini 的 grounding_supports 有 segment.start_index/end_index，需要手动重组；Ark 的 url_citation 跟 OpenAI Responses 几乎对齐但字段名是 input_tokens/output_tokens。整套对齐工作两周做完。</p>
+
+    <p>为什么商业工具不做这个？我猜两个原因：(1) 计算成本不低，且营销卖点不直观 —— 「Reddit 78% 引用」比「Reddit 30% 背书你品牌」看起来更醒目；(2) 一旦做了会暴露大多数「citation 追踪」实际多浅。这是 committing-to-shipping 的问题，不是算法问题。</p>
+
+    <h2>真实数据效果：ANV 跑出来的 Top Domains</h2>
+
+    <p>客户 ANV 跑了三个 Run（baseline + 改 llms.txt 后 + 加 FAQ schema 后），3 周时间，约 700 条 citation。Top Domains 报表给出来的「AI 弹药库」是：</p>
+
+    <table>
+      <tr><th>域名</th><th>被引次数</th><th>跨平台</th><th>解读</th></tr>
+      <tr><td><code>made-in-china.com</code></td><td>40</td><td>3 平台</td><td>B2B sourcing 顶流，AI 视为权威</td></tr>
+      <tr><td><code>alibaba.com</code></td><td>32</td><td>2 平台</td><td>同上，但 ChatGPT 偏好略低</td></tr>
+      <tr><td><code>cjsocks.com</code></td><td>31</td><td>2 平台</td><td>竞品 CJ 自家官网 —— 强 SEO 信号</td></tr>
+      <tr><td><code>meetsocks.com</code></td><td>20</td><td>3 平台</td><td>竞品 MeetSocks 自家官网</td></tr>
+      <tr><td><code>biorunsocks.com</code></td><td>19</td><td>3 平台</td><td>竞品 Biorun 自家官网</td></tr>
+      <tr><td><code>oksox.com</code></td><td>19</td><td>3 平台</td><td>行业 top 10 榜单文章</td></tr>
+      <tr><td><code>jingsourcing.com</code></td><td>12</td><td>3 平台</td><td>采购代理博客</td></tr>
+      <tr><td><code>customsoxmfg.com</code></td><td>11</td><td>1 平台（Gemini）</td><td>Gemini 解析出的「隐藏」权威</td></tr>
+    </table>
+
+    <p>这份清单可直接转化为<strong>三类内容投放动作</strong>：</p>
+
+    <ul>
+      <li><strong>marketplace listing 优化</strong>：在 made-in-china.com / alibaba.com 上把 ANV 的 listing 做完整（认证图、产品规格、视频）—— 这是顶流权威</li>
+      <li><strong>cluster journalism 进入</strong>：oksox.com / customsoxmfg.com 这种「top 10 sock manufacturers」博客，去找作者邮件 pitch 把 ANV 加进去（带认证 + 案例）</li>
+      <li><strong>竞品 reverse engineering</strong>：去 cjsocks.com / biorunsocks.com / meetsocks.com 看它们的页面 schema / FAQ 块 / 客户案例怎么写的，对照差距</li>
+    </ul>
+
+    <p>Run 对比视图（本文 hero 图的延伸）展示了三次干预的效果：baseline 提及率约 14%，改 llms.txt 后到 30.4%，加 FAQ schema 后到 56.5%。雷达图同时展示三个平台的偏好差异 —— 改 llms.txt 对 Perplexity 拉升最大，FAQ schema 对 ChatGPT 影响最深。<strong>没有 Run 对比就没法做这种因果归因</strong>。</p>
+
+    <h2>为什么开源不直接卖 SaaS</h2>
+
+    <p>这是这两周问自己最多的问题。把 ANV 这个真实案例 + 差异化 feature + 已经做出来的产品打包成 SaaS 卖 49 美元/月，理论上可行。最后还是选了开源。三个理由。</p>
+
+    <h3>1. Solo dev 没有 12 个月全职 runway</h3>
+
+    <p>我同时在做 ANV 的 GEO 业务、Lucky GitHub agent、claude-ai-harness、claude-zh CC fork 等几个项目。把 CiteScope 商业化意味着 6-12 个月全职做 GTM（落地页 / SEO / 内容营销 / 客户支持 / 国际收款合规），跟 VC 加持的 Topify / Profound 正面对抗。<strong>solo + 国内主体 + 卖国际 B2B SaaS</strong>，胜率太低。</p>
+
+    <h3>2. Open Core 已经是被验证的剧本</h3>
+
+    <p>PostHog（analytics）/ Plausible / Cal.com / Supabase / n8n 全部是 OSS core + 后期叠 hosted SaaS，起步 1-2 人，2-3 年内做到 100K+ ARR。模式是相同的：</p>
+
+    <ul>
+      <li>前 6 个月专注开源积累 stars / 社区反馈 / 早期 power users</li>
+      <li>看到重复出现的「我想用但不会自部署」的需求</li>
+      <li>启动 hosted version，卖给那部分用户（卖的是托管 + 多租户 + 优先支持，不是 core feature）</li>
+    </ul>
+
+    <p>这条路径对 capital 效率最高 —— <strong>前 6 个月几乎 0 边际成本</strong>，时间投入主要在维护 + 答 issue + 写博客（每周 5-10 小时），跟我手上其他项目并行。</p>
+
+    <h3>3. ANV 真实案例只有开源才能引用</h3>
+
+    <p>SaaS 不能把客户的探针 prompt / citation 拿出来当公开 case study（违反客户合同）。开源工具可以：因为 ANV 自己 self-host，数据完全在他自己 SQLite 里，<strong>展示的是「用我的 OSS 跑出来的数据」，不是「我帮他跑然后偷出来」</strong>。这种 case study 的可信度比 100 张产品截图都高。</p>
+
+    <h3>路线图</h3>
+
+    <p>具体的 6 个月路径：</p>
+
+    <ul>
+      <li><strong>Week 1-2（现在）</strong>：发文 + 提交 Show HN / Reddit / 即刻 / 知乎，收第一批 stars</li>
+      <li><strong>Month 1</strong>：收信号 —— GitHub stars / issues / 谁 fork、看后台有没有人开「feat: hosted version please」issue</li>
+      <li><strong>Month 2-3</strong>：补 v0.2 features（Postgres / 多 AI 适配器 / Slack alerting）</li>
+      <li><strong>Month 4</strong>：决策点 —— 如果 500+ stars + 5+ 主动询问 hosted，启动 hosted 版（<code>citescope.cloud</code>）</li>
+      <li><strong>Month 5-6（如果启 hosted）</strong>：multi-tenant + Stripe + 定价 19/49/199 美元月档位（全部低于 Topify 99 美元起步）。ANV 作为 case study 上首页</li>
+    </ul>
+
+    <p>反向情况 —— 什么时候应该跳过开源直接卖 SaaS：有 12 个月 runway 全职做 / 已经有 5+ 客户排队签 / 欧美注册主体能合规收款。目前都不成立，所以路径已经定了。</p>
+
+    <h2>怎么自己跑</h2>
+
+    <p>一行命令：</p>
+
+    <pre is:raw>
+git clone https://github.com/piglet12138/CiteScope.git
+cd CiteScope
+cp backend/.env.example backend/.env
+# 打开 backend/.env 填三把 key:
+#   OPENAI_OFFICIAL_API_KEY=sk-...
+#   PERPLEXITY_API_KEY=...
+#   GOOGLE_AI_API_KEY=...
+docker compose up -d
+# 浏览器打开 http://localhost:3000
+</pre>
+
+    <p>API key 申请：</p>
+
+    <ul>
+      <li><strong>OpenAI Official</strong>：<a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>（跑 ChatGPT web search）</li>
+      <li><strong>Perplexity Sonar</strong>：<a href="https://www.perplexity.ai/settings/api" target="_blank">perplexity.ai/settings/api</a>（或走 OpenRouter，PERPLEXITY_API_BASE 改成 <code>https://openrouter.ai/api/v1</code>）</li>
+      <li><strong>Google AI Studio</strong>：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></li>
+      <li>可选 <strong>火山方舟 Ark</strong>：<a href="https://www.volcengine.com/product/ark" target="_blank">volcengine.com/product/ark</a>（豆包）</li>
+    </ul>
+
+    <p>预算估算：100 prompt × 3 平台 × 每周 1 次的典型频率，API 月成本 <strong>5-15 美元</strong>。Topify 卖你同样的数据 99 美元/月。</p>
+
+    <p>setup 完之后到 <code>localhost:3000</code> → 品牌列表 → 新建客户 → 录入探针问题 → 监测中心 → 新建实验运行。5 分钟跑完，引用来源 Tab 就有 Top Domains + Competitor Assets 报表。完整使用手册站内嵌入：<code>localhost:3000/guides</code>，8 个模块独立 guide。</p>
+
+    <h2>我希望听到的反馈</h2>
+
+    <ul>
+      <li><strong>Bug 报告</strong>，任何类型 —— adapter 输出和 vendor 真实响应不匹配、span attribution 处理某种 Unicode 出错、运维问题</li>
+      <li><strong>新 adapter 贡献</strong>，我目前没覆盖的引擎 —— Bing Copilot / Claude.ai / You.com / Brave Search 都在心愿单上。Adapter 模板很简单，复制 <code>chatgpt.py</code> 改 60 行就能上一个新引擎</li>
+      <li><strong>使用场景故事</strong> —— 你想用这份数据做什么，商业工具不让你做的？告诉我，我优先做能解锁那些工作流的功能</li>
+    </ul>
+
+    <p>GitHub Issue / Discussion 都开着。中英文都行。</p>
+
+    <h2>最后一句</h2>
+
+    <p>GEO 在 2027 年会变成基础线。每个在乎可发现性的品牌都会去测它。问题是测的方式 —— 是订一个 99 美元/月的 Topify dashboard，还是用自家 0 美元/月的 SQLite 文件 + 保留二次开发的自由度。</p>
+
+    <p>我押第二种世界。如果你也认同，<a href="https://github.com/piglet12138/CiteScope" target="_blank">给我们点个 star</a>，跑一个 Run 试试，告诉我缺什么。</p>
+
+    <div class="originality-card">
+      <div class="oc-badge">原创首发 · Original</div>
+      <div class="oc-headline">本文为原创技术文章，首发于 sg.yaoyuheng2001.me</div>
+      <dl class="oc-meta">
+        <dt>原文链接</dt><dd><a href={url}>{url}</a></dd>
+        <dt>首发时间</dt><dd>2026 年 5 月 24 日</dd>
+        <dt>最后修订</dt><dd>2026 年 5 月 24 日</dd>
+        <dt>作者</dt><dd>Yao Yuheng（姚钰珩）· NTU Data Science M.Sc.</dd>
+        <dt>关联项目</dt><dd><a href="https://github.com/piglet12138/CiteScope">piglet12138/CiteScope</a></dd>
+        <dt>字数</dt><dd>约 5,800 字 · 阅读时间 ≈ 12 分钟</dd>
+      </dl>
+      <div class="oc-license">
+        本文采用 <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> 许可。
+        转载请注明来源、保留作者信息并附带原文链接。AI 训练 / 摘要引用请保留 canonical URL：<code>{url}</code>。
+        商业用途请通过博客联系作者授权。
+      </div>
+    </div>
+
+    <div class="author-card">
+      <p class="name">Yao Yuheng / 姚钰珩</p>
+      <p class="bio">NTU Data Science 硕士。专注 AI Agent 系统工程、Eval 驱动开发、LLM 应用 + GEO/AEO 监测。在做 <a href="https://github.com/piglet12138/CiteScope">CiteScope</a>、<a href="https://claude.yaoyuheng2001.me">claude-ai-harness</a>。</p>
+      <p class="links">
+        <a href="https://sg.yaoyuheng2001.me/">Blog</a>·
+        <a href="https://github.com/piglet12138">GitHub</a>·
+        <a href="https://juejin.cn/user/3159377279190218/posts">掘金</a>·
+        <a href="https://piglet12138.substack.com/">Substack</a>·
+        <a href="https://sg.yaoyuheng2001.me/rss.xml">RSS</a>
+      </p>
+    </div>
+
+    <div class="footer-note">
+      Hero 与 paper-bg 由 LuckyAPI gpt-image-2 生成（warm-engineering mood）。
+    </div>
+  </article>
+  <Analytics />
+</body>
+</html>
